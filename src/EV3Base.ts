@@ -1,9 +1,9 @@
-import SerialPort from "serialport";
+import { SerialPort } from "serialport";
 import { Broker } from "./Broker";
 import { createPointerMap, decodeResponseBody, decodeResponseHead, encodeRequestBody, encodeRequestHead, RequestParam} from "./cmd";
 import { Response } from "./cmd";
 import { IResponseValue } from "./cmdutils";
-import EV3DCParser from "./serialport-parser-EV3DC";
+import EV3DCParser from "./serialport-parser-ev3dc";
 
 export class EV3Base {
 
@@ -51,7 +51,7 @@ export class EV3Base {
         }
     }
 
-    public async connect() {
+    public async connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this._port.isOpen === true) { resolve(); }
             this._port.open((err) => {
@@ -60,7 +60,7 @@ export class EV3Base {
         });
     }
 
-    public async disconnect() {
+    public async disconnect(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this._port.isOpen === false) { resolve(); }
             this._port.close((err) => {

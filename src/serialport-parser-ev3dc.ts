@@ -17,8 +17,8 @@ export default class EV3DCParser extends Transform {
         while (loop && buffer.length >= 2) {
             const msgLength = buffer.readUInt16LE(0) + 2;
             if (buffer.length >= msgLength) {
-                this.push(buffer.slice(0, msgLength));
-                buffer = buffer.slice(msgLength);
+                this.push(buffer.subarray(0, msgLength));
+                buffer = buffer.subarray(msgLength);
             } else {
                 loop = false;
             }

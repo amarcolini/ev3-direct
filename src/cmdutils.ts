@@ -12,6 +12,14 @@ export interface IParamNumber {
     value: number;
 }
 
+export function p(bytes: 0 | 1 | 2 | 4, value: number): IParamNumber {
+    return { bytes: bytes, value: value }
+}
+
+export function pm(bytes: number, type: PointerType, scope: PointerScope): IParamMemoryPointer {
+    return { bytes: bytes, type: type, scope: scope }
+}
+
 export interface IResponsePointer {
     bytes: number;
     index: number;
@@ -21,6 +29,34 @@ export interface IResponsePointer {
 export interface IResponseValue {
     index: number;
     value: number | string;
+}
+
+/**
+     * Ensures that a parameter lies in the range [lowerBound, upperBound].
+     * @param param 
+     * @param lowerBound 
+     * @param upperBound 
+     */
+export function rangeCheck(paramName: string | null, param: number, lowerBound: number | null | undefined, upperBound: number | null | undefined) {
+    if (lowerBound != null && upperBound != null) {
+        if (param < lowerBound || param > upperBound) {
+            throw new RangeError(`Argument ${paramName != null ? `'${paramName}' ` : ""}must be >= ${lowerBound} and <= ${upperBound} (was ${param}).`);
+        }
+    }
+    if (lowerBound != null && upperBound == null) {
+        if (param < lowerBound) {
+            throw new RangeError(`Argument ${paramName != null ? `'${paramName}' ` : ""}must be >= ${lowerBound} (was ${param}).`);
+        }
+    }
+    if (lowerBound == null && upperBound != null) {
+        if (param > upperBound) {
+            throw new RangeError(`Argument ${paramName != null ? `'${paramName}' ` : ""}must be <= ${upperBound} (was ${param}).`);
+        }
+    }
+}
+
+export function clampToRange(param: number, lowerBound: number | null | undefined, upperBound?: number | null | undefined): number {
+    return Math.min(upperBound ? upperBound : Infinity, Math.max(lowerBound ? lowerBound : -Infinity, param))
 }
 
 export function encodePointer(param: IParamMemoryPointer, index: number): Buffer {

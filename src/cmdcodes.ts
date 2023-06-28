@@ -258,7 +258,7 @@ export default Object.freeze({
         TERMINAL: 0x1f,
     },
     uiButton: {
-        SHROTPRESS: 0x01,
+        SHORTPRESS: 0x01,
         LONGPRESS: 0x02,
         WAIT_FOR_PRESS: 0x03,
         FLUSH: 0x04,

@@ -1,6 +1,8 @@
 import cmdc from "./cmdcodes";
+import { clampToRange, p, pm } from "./cmdutils";
 import { EV3Base } from "./EV3Base";
 import opc from "./opcodes";
+import * as devices from "./devices/devices"
 
 export class EV3 extends EV3Base {
 
@@ -13,11 +15,7 @@ export class EV3 extends EV3Base {
         const resp = await this.sendRequest([
             opc.uiRead,
             cmdc.uiRead.GET_IBATT,
-            {
-                bytes: 4,
-                scope: "global",
-                type: "float",
-            },
+            pm(4, "float", "global"),
         ]);
 
         return resp[0].value as number;
@@ -27,11 +25,7 @@ export class EV3 extends EV3Base {
         const resp = await this.sendRequest([
             opc.uiRead,
             cmdc.uiRead.GET_LBATT,
-            {
-                bytes: 1,
-                scope: "global",
-                type: "int",
-            },
+            pm(1, "int", "global"),
         ]);
 
         return resp[0].value as number;
@@ -41,11 +35,7 @@ export class EV3 extends EV3Base {
         const resp = await this.sendRequest([
             opc.uiRead,
             cmdc.uiRead.GET_VBATT,
-            {
-                bytes: 4,
-                scope: "global",
-                type: "float",
-            },
+            pm(4, "float", "global"),
         ]);
 
         return resp[0].value as number;
@@ -55,15 +45,8 @@ export class EV3 extends EV3Base {
         const resp = await this.sendRequest([
             opc.comGet,
             cmdc.comGet.GET_BRICKNAME,
-            {
-                bytes: 0,
-                value: 30,
-            },
-            {
-                bytes: 30,
-                scope: "global",
-                type: "string",
-            },
+            p(0, 30),
+            pm(30, "string", "global"),
         ]);
 
         return resp[0].value as string;
@@ -73,15 +56,8 @@ export class EV3 extends EV3Base {
         const resp = await this.sendRequest([
             opc.uiRead,
             cmdc.uiRead.GET_FW_VERS,
-            {
-                bytes: 0,
-                value: 30,
-            },
-            {
-                bytes: 30,
-                scope: "global",
-                type: "string",
-            },
+            p(0, 30),
+            pm(30, "string", "global"),
         ]);
 
         return resp[0].value as string;
@@ -91,15 +67,8 @@ export class EV3 extends EV3Base {
         const resp = await this.sendRequest([
             opc.uiRead,
             cmdc.uiRead.GET_HW_VERS,
-            {
-                bytes: 0,
-                value: 30,
-            },
-            {
-                bytes: 30,
-                scope: "global",
-                type: "string",
-            },
+            p(0, 30),
+            pm(30, "string", "global"),
         ]);
 
         return resp[0].value as string;
@@ -109,15 +78,8 @@ export class EV3 extends EV3Base {
         const resp = await this.sendRequest([
             opc.uiRead,
             cmdc.uiRead.GET_OS_VERS,
-            {
-                bytes: 0,
-                value: 30,
-            },
-            {
-                bytes: 30,
-                scope: "global",
-                type: "string",
-            },
+            p(0, 30),
+            pm(30, "string", "global"),
         ]);
 
         return resp[0].value as string;
@@ -132,16 +94,8 @@ export class EV3 extends EV3Base {
             opc.filename,
             cmdc.filename.TOTALSIZE,
             path,
-            {
-                bytes: 4,
-                scope: "global",
-                type: "int",
-            },
-            {
-                bytes: 4,
-                scope: "global",
-                type: "int",
-            },
+            pm(4, "int", "global"),
+            pm(4, "int", "global"),
         ]);
 
         return resp[2].value as number;
@@ -163,11 +117,7 @@ export class EV3 extends EV3Base {
             opc.file,
             cmdc.file.GET_FOLDERS,
             path,
-            {
-                bytes: 1,
-                scope: "global",
-                type: "int",
-            },
+            pm(1, "int", "global"),
         ]);
 
         return resp[0].value as number;
@@ -178,19 +128,9 @@ export class EV3 extends EV3Base {
             opc.file,
             cmdc.file.GET_SUBFOLDER_NAME,
             dirPath,
-            {
-                bytes: 1,
-                value: index,
-            },
-            {
-                bytes: 1,
-                value: 64,
-            },
-            {
-                bytes: 64,
-                scope: "global",
-                type: "string",
-            },
+            p(1, index),
+            p(1, 64),
+            pm(64, "string", "global"),
         ]);
 
         return resp[0].value as string;
@@ -201,11 +141,7 @@ export class EV3 extends EV3Base {
             opc.filename,
             cmdc.filename.EXIST,
             path,
-            {
-                bytes: 1,
-                scope: "global",
-                type: "int",
-            },
+            pm(1, "int", "global"),
         ]);
 
         return (resp[0].value as number) === 1;
@@ -229,10 +165,7 @@ export class EV3 extends EV3Base {
         await this.sendRequest([
             opc.uiWrite,
             cmdc.uiWrite.LED,
-            {
-                bytes: 1,
-                value: flag,
-            },
+            p(1, flag),
         ]);
     }
 
@@ -245,10 +178,78 @@ export class EV3 extends EV3Base {
         await this.sendRequest([
             opc.info,
             cmdc.info.SET_VOLUME,
-            {
-                bytes: 1,
-                value: percent,
-            },
+            p(1, percent),
         ]);
+    }
+
+    public async waitBrick(milliseconds: number, thread: number = 0) {
+        const corrected = clampToRange(milliseconds, 0, null)
+        await this.sendRequest([
+            opc.timerWait,
+            p(4, corrected),
+            p(4, thread),
+            opc.timerReady,
+            p(4, thread)
+        ])
+    }
+
+    /**
+     * Plays a tone on the Brick
+     * @param volume 0 - 100%
+     * @param frequency 250 - 10,000Hz
+     * @param duration in milliseconds
+     */
+    public async makeTone(volume: number, frequency: number, duration: number) {
+        const correctedVolume = clampToRange(volume, 0, 100)
+        const correctedFrequency = clampToRange(frequency, 250, 10_000)
+        const correctedDuration = clampToRange(duration, 0, null)
+        await this.sendRequest([
+            opc.sound,
+            cmdc.sound.TONE,
+            p(1, correctedVolume),
+            p(2, correctedFrequency),
+            p(2, correctedDuration)
+        ])
+    }
+
+    public getEV3LargeMotor(port: devices.MotorPort): devices.EV3LargeMotor {
+        return new devices.EV3LargeMotor(this, port)
+    }
+
+    public getEV3MediumMotor(port: devices.MotorPort): devices.EV3MediumMotor {
+        return new devices.EV3MediumMotor(this, port)
+    }
+
+    public getEV3TouchSensor(port: devices.EV3Port): devices.EV3TouchSensor {
+        return new devices.EV3TouchSensor(this, port)
+    }
+
+    public getEV3UltrasonicSensor(port: devices.EV3Port): devices.EV3UltrasonicSensor {
+        return new devices.EV3UltrasonicSensor(this, port)
+    }
+
+    public getEV3ColorSensor(port: devices.EV3Port): devices.EV3ColorSensor {
+        return new devices.EV3ColorSensor(this, port)
+    }
+
+    public getEV3Gyro(port: devices.EV3Port): devices.EV3Gyro {
+        return new devices.EV3Gyro(this, port)
+    }
+
+    /**
+     * Creates a motor pair that runs both motors in sync. Good for drive bases.
+     * @param motor1 
+     * @param motor2
+     */
+    public getMotorPairFrom(motor1: devices.MotorPort, motor2: devices.MotorPort): devices.MotorPair {
+        return devices.MotorPair.fromMotors(this, motor1, motor2)
+    }
+
+    /**
+     * Creates a motor pair that runs both motors in sync. Good for drive bases.
+     * @param port  
+     */
+    public getMotorPair(port: devices.MotorPairs) {
+        return new devices.MotorPair(this, port)
     }
 }
