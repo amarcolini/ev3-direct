@@ -38,4 +38,4 @@ connectBrickByPort("COM4").then(async (brick) => {
 
 ## Advanced usage
 
-The EV3 class has only few basic methods implemented. To implement advanced logic, see [custom requests](./docs/custom-requests.md)
+The EV3 class has several basic methods implemented. To implement advanced logic, see [custom requests](./docs/custom-requests.md)
